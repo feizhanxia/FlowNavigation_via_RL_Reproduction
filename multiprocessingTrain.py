@@ -1,10 +1,9 @@
-# from IPython import embed
-
 # Description: This file is used to train the agent in parallel.
 # Reinforcement Learning
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+from multiprocessing import Pool
 # 定义涡场和动力学方程
 def omega_hat(x, z, length = 1):
     if length == 1:
@@ -185,54 +184,37 @@ class QLearningAgent:
             done = False
             episode_return = 0
             trajectory = [info['position'].copy()]
-
+            
             while not done:
                 action = np.argmax(self.Q[state['direction'], state['vorticity'], :])
                 next_state, reward, done, _, info = self.env.step(action)
                 episode_return += reward
                 trajectory.append(info['position'].copy())
                 state = next_state
-
+                
             returns.append(episode_return)
             trajectories.append(trajectory)
-
+            
         avg_return = np.mean(returns)
         return avg_return, trajectories
 
-
-# 创建环境和智能体
-# 对照
-env1 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-agent1 = QLearningAgent(env1, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=1000, max_steps = 5000)
-# 位移噪声大
-env2 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.5, DR=0.001, dt=0.01)
-agent2 = QLearningAgent(env2, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=1000, max_steps = 5000)
-# 角度噪声大
-env3 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.3, dt=0.01) # type: ignore
-agent3 = QLearningAgent(env3, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=1000, max_steps = 5000)
-# 探索率小
-env4 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-agent4 = QLearningAgent(env4, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.001, num_episodes=1000, max_steps = 5000)
-# 学习率大
-env5 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-agent5 = QLearningAgent(env5, learning_rate=0.05, discount_factor=0.999, exploration_prob=0.1, num_episodes=1000, max_steps = 5000)
-# 单局长度限制小
-env6 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-agent6 = QLearningAgent(env6, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=1000, max_steps = 2000)
-# 学习局数多
-# env7 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-# agent7 = QLearningAgent(env7, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=3000, max_steps = 5000)
-# 折扣率小
-env8 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
-agent8 = QLearningAgent(env8, learning_rate=0.01, discount_factor=0.9, exploration_prob=0.1, num_episodes=1000, max_steps = 5000)
-
-
-#定义训练函数
-def train_agent(agent):
-    agent.train(initial_position=np.array([3*np.pi/5,0.0]),initial_direction=np.array([np.pi/2]))
-    return agent
-
-
-
-# 创建智能体列表
-agents = [agent1, agent2, agent3, agent4, agent5, agent6, agent8]
+if __name__ == '__main__':
+    # 创建环境和智能体
+    # 对照
+    env1 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
+    agent1 = QLearningAgent(env1, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=100, max_steps = 5000)
+    # 位移噪声大
+    env2 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.5, DR=0.001, dt=0.01)
+    agent2 = QLearningAgent(env2, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=100, max_steps = 5000)
+    # 角度噪声大
+    env3 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.3, dt=0.01) # type: ignore
+    agent3 = QLearningAgent(env3, learning_rate=0.01, discount_factor=0.999, exploration_prob=0.1, num_episodes=100, max_steps = 5000)
+    #定义训练函数
+    def train_agent(agent):
+        agent.train(initial_position=np.array([3*np.pi/5,0.0]),initial_direction=np.array([np.pi/2]))
+        return agent
+    # 创建智能体列表
+    agents = [agent1, agent2, agent3]
+    with Pool(processes=len(agents)) as pool:
+        agents = pool.map(train_agent, agents)
+    [agent1, agent2, agent3] = agents
