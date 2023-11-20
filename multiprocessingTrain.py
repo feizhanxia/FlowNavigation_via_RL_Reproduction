@@ -12,7 +12,7 @@ def omega_hat(x, z, length = 1):
         return np.cos(x)*np.cos(z)
     elif length == 3:
         return np.array([0,0,np.cos(x)*np.cos(z)])
-        
+
 def u_hat(x, z):
     return np.array([-np.cos(x)*np.sin(z)/2, np.sin(x)*np.cos(z)/2])
 
@@ -27,7 +27,7 @@ def p(theta_p, length = 2): # p = (p_x, p_z) (default) or (p_x, p_z, p_y) (lengt
         return np.array([np.cos(theta_p),np.sin(theta_p)])
     elif length == 3:
         return np.array([np.cos(theta_p),np.sin(theta_p),0])
-    
+
 def delta_X(x, z, theta_p, Phi, D0, u0): # delta_X = (delta_x, delta_z)
     return u0*(u_hat(x, z)+Phi*np.array([np.cos(theta_p),np.sin(theta_p)]))+np.sqrt(2*D0)*eta()
 
@@ -74,36 +74,36 @@ class CustomEnv(gym.Env): # 继承gym.Env类
         }
         # 初始化状态和观测
         self.observation = self.reset()
-        
-    def reset(self, seed = None, initial_position = None, initial_direction = None):    
-        super().reset(seed=seed) # 重置环境   
+
+    def reset(self, seed = None, initial_position = None, initial_direction = None):
+        super().reset(seed=seed) # 重置环境
         self.state = self.state_space.sample() # 初始化状态
         if initial_position is not None:
             self.state["position"] = initial_position.copy()
         if initial_direction is not None:
             self.state["direction_theta_p"] = initial_direction.copy()
         self.observation = self._get_obs()
-        info = {'position': self.state['position']} # 初始化信息 
+        info = {'position': self.state['position']} # 初始化信息
         return self.observation, info # 返回初始化状态
-    
+
     def step(self, action):
         # dynamics
         ka = self._action_to_ka[action]
         delta_x = delta_X(
-            self.state["position"][0], 
-            self.state["position"][1], 
-            self.state["direction_theta_p"][0], 
-            self.Phi, 
-            self.D0, 
+            self.state["position"][0],
+            self.state["position"][1],
+            self.state["direction_theta_p"][0],
+            self.Phi,
+            self.D0,
             self.u0)
         self.state["position"] += delta_x*self.dt
         self.state["direction_theta_p"] += delta_theta_p(
-            self.state["position"][0], 
+            self.state["position"][0],
             self.state["position"][1],
-            self.state["direction_theta_p"][0], 
-            ka, 
-            self.Psi, 
-            self.B, 
+            self.state["direction_theta_p"][0],
+            ka,
+            self.Psi,
+            self.B,
             self.DR
             )*self.dt
         self.state["direction_theta_p"] = self.state["direction_theta_p"] % (2*np.pi)
@@ -117,7 +117,7 @@ class CustomEnv(gym.Env): # 继承gym.Env类
         truncated = not(self.state_space.contains(self.state))
         info  = {'position': self.state['position']}
         return observation, reward, terminated, truncated, info
-    
+
     def _get_obs(self):
         self.observation  = self.observation_space.sample()
         w = omega_hat(self.state["position"][0], self.state["position"][1])
@@ -142,12 +142,12 @@ class CustomEnv(gym.Env): # 继承gym.Env类
 
 # 定义智能体
 class QLearningAgent:
-    def __init__(self, env, 
-        discount_factor=0.95, 
-        initial_learning_rate=0.1, 
-        learning_rate_decay=0.99, 
-        initial_exploration_prob=0, 
-        exploration_prob_decay = 0.995, 
+    def __init__(self, env,
+        discount_factor=0.95,
+        initial_learning_rate=0.1,
+        learning_rate_decay=0.99,
+        initial_exploration_prob=0,
+        exploration_prob_decay = 0.995,
         num_episodes=1000, max_steps = 10000
         ):
         self.env = env
@@ -175,7 +175,7 @@ class QLearningAgent:
     def train(self, initial_position = None, initial_direction = None):
         for episode in range(self.num_episodes):
             state, info = self.env.reset(
-                initial_position = initial_position, 
+                initial_position = initial_position,
                 initial_direction = initial_direction)
             done = False
             step = 0
@@ -199,7 +199,7 @@ class QLearningAgent:
                 # 更新状态
                 state = next_state
                 step+=1
-                if step > self.max_steps:            
+                if step > self.max_steps:
                     break
             self.update_learning_rate()
             self.update_exploration_prob()
@@ -208,7 +208,7 @@ class QLearningAgent:
             print('\r'+' '*40,end='')
             print(f'\rEpisode {episode + 1}/{self.num_episodes} length {step}', end='')
 
-# 定义类 Swimmer, 用于可视化训练后的智能体或者naive的智能体. 
+# 定义类 Swimmer, 用于可视化训练后的智能体或者naive的智能体.
 # 输入末认为None, 即为naive的swimmer, action永远对应upward, 即ka = (0,1); 如果输入为训练好的q-learning agent, 则按照Q值选择动作.
 class Swimmer:
     def __init__(self, env, agent=None, max_steps=None):
@@ -267,33 +267,33 @@ if __name__ == '__main__':
     # 对照
     env1 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.001, dt=0.01)
     agent1 = QLearningAgent(
-    env1, 
-    discount_factor=0.999, 
+    env1,
+    discount_factor=0.999,
     initial_learning_rate=0.05,
-    learning_rate_decay=0.995, 
-    initial_exploration_prob=0.1, 
+    learning_rate_decay=0.995,
+    initial_exploration_prob=0.1,
     exploration_prob_decay=0.996,
     num_episodes=1000,
     max_steps = 6000)
     # 位移噪声大
     env2 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.5, DR=0.001, dt=0.01)
     agent2 = QLearningAgent(
-    env2, 
-    discount_factor=0.999, 
+    env2,
+    discount_factor=0.999,
     initial_learning_rate=0.05,
-    learning_rate_decay=0.995, 
-    initial_exploration_prob=0.1, 
+    learning_rate_decay=0.995,
+    initial_exploration_prob=0.1,
     exploration_prob_decay=0.996,
     num_episodes=1000,
     max_steps = 6000)
     # 角度噪声大
-    env3 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.3, dt=0.01) 
+    env3 = CustomEnv(Phi= 0.1, Psi=0.3, B=1, u0=1, D0=0.01, DR=0.3, dt=0.01)
     agent3 = QLearningAgent(
-    env3, 
-    discount_factor=0.999, 
+    env3,
+    discount_factor=0.999,
     initial_learning_rate=0.05,
-    learning_rate_decay=0.995, 
-    initial_exploration_prob=0.1, 
+    learning_rate_decay=0.995,
+    initial_exploration_prob=0.1,
     exploration_prob_decay=0.996,
     num_episodes=1000,
     max_steps = 6000)
