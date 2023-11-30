@@ -1,5 +1,5 @@
 # A note for green hand in Q - learning
-> Reproduction letter: Flow Navigation by Smart Microswimmers via RL
+> Reproduction letter: Flow Navigation by Smart Microswimmers via Reinforcement Learning
 
 这份文档总结了部份入门强化学习的基本概念，但它并不是一份教材。教材往往内容丰富且知识体系完整，而这可能也常常对应着更加冗长的内容、有意义但并不实用的算法和超出需要的数学严谨。对于具备一定数学基础，却并不曾真正接触过强化学习，又渴望避开繁琐的细节，快速理解其核心数学定义并上手体验强化学习在科学中应用的同学，我希望这份笔记可以帮到你。
 
