@@ -16,6 +16,7 @@
         "linestyle",
         "linewidth",
         "meshgrid",
+        "minshaft",
         "viridis",
         "xaxis",
         "xlabel",
